@@ -1,14 +1,5 @@
 import qualified Data.Set as S
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 playRound (a:as, b:bs) =
     if a > b then
@@ -48,13 +39,10 @@ playCombat2 (deck1, deck2) =
     where
         (h, a, b) = head (dropWhile (\(h, i, j) -> not (null i) && not (null j) && not (S.member (i, j) h)) (iterate playRound2 (S.empty, deck1, deck2)))
 
-parseDeck :: [String] -> [Int]
-parseDeck = map read
-
 main = do
     contents <- readFile "inputs/22.txt"
-    let [_:deck1Str, _:deck2Str] = split "" (lines contents)
-    let (deck1, deck2) = (parseDeck deck1Str, parseDeck deck2Str)
+    let [_:deck1Str, _:deck2Str] = "" `split` (lines contents)
+    let (deck1, deck2) = (map read deck1Str, map read deck2Str)
     let (_, part1) = playCombat (deck1, deck2)
     let (_, part2) = playCombat2 (deck1, deck2)
     print (part1, part2)

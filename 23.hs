@@ -5,6 +5,7 @@ import Data.Array.MArray (newArray, readArray, writeArray)
 import Data.Array.IO
 import Data.Array.Unboxed(UArray, (!))
 import Data.Foldable(foldlM)
+import Data.Char(digitToInt)
 
 recurse n f x = foldl' (\x _ -> f x) x [1..n]
 
@@ -54,7 +55,9 @@ shuffleCupsFast cups current iterations = thread
             return (na, b)
 
 main = do
-    let input = [1, 5, 7, 6, 2, 3, 9, 8, 4]
+    contents <- readFile "inputs/23.txt"
+    let (inputStr:_) = lines contents
+    let input = map digitToInt inputStr
     let circle = arrToCircle input
     let circle2 = arrToCircle (input ++ [10..1000000])
     let current = 1

@@ -1,14 +1,4 @@
-
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 parseRecord :: String -> (String, [(Int, Int)])
 parseRecord r = (field, map (\i -> let [low,high] = map read (split '-' i) in (low, high)) [r1, r2])

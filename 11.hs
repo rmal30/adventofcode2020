@@ -1,4 +1,5 @@
 import Data.Array.IArray(array, bounds, (!), indices, elems, Array)
+import Utils(takeWhileChange)
 deltas = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
 nextStep :: Array (Int, Int) Char -> (Int, Int) -> Char
@@ -41,14 +42,10 @@ nextIteration2 grid = array (bounds grid) [((i, j), nextStep2 grid (i, j)) | (i,
 countFilled :: Array (Int, Int) Char -> Int
 countFilled grid = length (filter (=='#') (elems grid))
 
-takeWhileChange [] = []
-takeWhileChange [x] = [x]
-takeWhileChange [x,y] = if x == y then [x] else [x,y]
-takeWhileChange (x:y:xs) = if x == y then [x] else x:takeWhileChange (y:xs)
-
 main = do
     contents <- readFile "inputs/11.txt"
     let gridStr = lines contents
     let grid = array ((0, 0), (length (gridStr !! 0) - 1, length gridStr - 1)) [((x, y), c) | (y, l) <- zip [0..] gridStr, (x, c) <- zip [0..] l]
-    print (last (takeWhileChange (map countFilled (iterate nextIteration grid))))
-    print (last (takeWhileChange (map countFilled (iterate nextIteration2 grid))))
+    let part1 = last (takeWhileChange (map countFilled (iterate nextIteration grid)))
+    let part2 = last (takeWhileChange (map countFilled (iterate nextIteration2 grid)))
+    print (part1, part2)

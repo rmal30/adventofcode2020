@@ -1,30 +1,25 @@
-
-split [] _ = []
-split arr tok =
-    if not (null y) then
-        x:(split newArr tok)
-    else
-        [x]
+import Utils(split)
+parsePasswordEntry :: String -> ((Int, Int), Char, String)
+parsePasswordEntry str = ((low, high), letter, password)
     where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+        [rangeStr, letter:_, password] = ' ' `split` str
+        [low, high] = (map read . (split '-')) rangeStr
 
-parseLine :: String -> ((Int, Int), Char, String)
-parseLine str = ((low, high), l, p)
+a `xor` b = (a && (not b)) || (b && (not a))
+
+checkPasswordLetterCount ((low, high), letter, password) = low <= count && count <= high 
     where
-        [r, l:_, p] = split str ' '
-        [low, high] = map read (split r '-')
+        count = length (filter (==letter) password)
 
-checkPassword ((low, high), letter, password) = low <= count && count <= high where count = length (filter (==letter) password)
-checkPassword2 ((low, high), letter, password) = (a && (not b)) || (b && (not a))
-        where
-            a = password !! (low - 1) == letter
-            b = password !! (high - 1) == letter
+checkPasswordLetterPosition ((low, high), letter, password) = match1 `xor` match2
+    where
+        match1 = password !! (low - 1) == letter
+        match2 = password !! (high - 1) == letter
 
 main = do
     contents <- readFile "inputs/2.txt"
-    let values = map parseLine (lines contents)
-    let part1 = length (filter checkPassword values)
-    let part2 = length (filter checkPassword2 values)
+    let values = map parsePasswordEntry (lines contents)
+    let part1 = length (filter checkPasswordLetterCount values)
+    let part2 = length (filter checkPasswordLetterPosition values)
     print (part1, part2)
 

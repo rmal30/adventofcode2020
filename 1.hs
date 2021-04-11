@@ -1,23 +1,24 @@
-import qualified Data.Set as S
-getTwoSum :: [Int] -> Int -> [(Int, Int)]
-getTwoSum x k = [(i,j) | i <- x, j <- x, i + j == k, i /= j]
+import qualified Data.IntSet as S
 
-getTwoSumFast :: [Int] -> Int -> [(Int, Int)]
-getTwoSumFast x k = filter (\(_, b) -> S.member b setValues) [(i, k - i) | i <- x]
+getPairsWithSum :: [Int] -> Int -> [(Int, Int)]
+getPairsWithSum values target = [(v1, v2) | v1 <- values, v2 <- values, v1 + v2 == target, v1 /= v2]
+
+getPairsWithSumFast :: [Int] -> Int -> [(Int, Int)]
+getPairsWithSumFast values target = filter (\(_, v2) -> S.member v2 valueSet) [(v, target - v) | v <- values]
     where
-        setValues = S.fromList x
+        valueSet = S.fromList values
 
-getThreeSum :: [Int] -> Int -> [(Int, Int, Int)]
-getThreeSum x s = [(i, j, k) | i <- x, j <- x, k <- x, i + j + k == s, i /= j, j /= k, i /= k]
+getTriplesWithSum :: [Int] -> Int -> [(Int, Int, Int)]
+getTriplesWithSum values target = [(v1, v2, v3) | v1 <- values, v2 <- values, v3 <- values, sum [v1, v2, v3] == target, v1 /= v2, v2 /= v3, v3 /= v1]
 
-getThreeSumFast :: [Int] -> Int -> [(Int, Int, Int)]
-getThreeSumFast x k = filter (\(_, _, b) -> S.member b setValues) [(i, j, k - i - j) | i <- x, j <- x]
+getTriplesWithSumFast :: [Int] -> Int -> [(Int, Int, Int)]
+getTriplesWithSumFast values target = filter (\(_, _, v3) -> S.member v3 valueSet) [(v1, v2, target - v1 - v2) | v1 <- values, v2 <- values]
     where
-        setValues = S.fromList x
+        valueSet = S.fromList values
 
 main = do
     contents <- readFile "inputs/1.txt"
     let values = map read (lines contents)
-    let (a1,b1):_ = getTwoSumFast values 2020
-    let (a2,b2,c2):_ = getThreeSumFast values 2020
-    print (a1*b1, a2*b2*c2)
+    let (p1, p2):_ = values `getPairsWithSumFast` 2020
+    let (t1, t2, t3):_ = values `getTriplesWithSumFast` 2020
+    print (p1 * p2, t1 * t2 * t3)

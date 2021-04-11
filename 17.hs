@@ -1,14 +1,5 @@
 import Data.Array.IArray(array, Array, bounds, inRange, (!), elems, Ix)
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 conwayLogic :: Ix a => Array a Char -> a -> [a] -> Char
 conwayLogic volume index neighbourCells =

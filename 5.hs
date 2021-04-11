@@ -1,16 +1,14 @@
-import qualified Data.Set as S
-parseLetter l = case l of
-    'F' -> 0
-    'B' -> 1
-    'L' -> 0
-    'R' -> 1
+import qualified Data.IntSet as S
+import qualified Data.Map.Strict as M
 
-getValue k [] = 0
-getValue k (a:x) = a + k*(getValue k x)
+binaryCodes = M.fromList [('F', 0), ('B', 1), ('L', 0), ('R', 1)]
 
-parseBinary = (getValue 2) . reverse
-parseSeat x = quotRem (parseBinary (map parseLetter x)) 8
-getSeatId (a,b) = a*8 + b
+getValueFromBase k [] = 0
+getValueFromBase k (a:x) = a + (k * (getValueFromBase k x))
+
+binaryToDecimal = (getValueFromBase 2) . reverse
+parseSeat x = quotRem (binaryToDecimal (map (binaryCodes M.!) x)) 8
+getSeatId (a,b) = (a * 8) + b
 
 main = do
     input <- readFile "inputs/5.txt"
@@ -18,5 +16,5 @@ main = do
     let seatIds = map (getSeatId . parseSeat) rawSeats
     let part1 = maximum seatIds
     let seatSet = S.fromList seatIds
-    let part2 = head (filter (\i -> not (S.member i seatSet) && S.member (i-1) seatSet && S.member (i + 1) seatSet) [1..1022])
+    let part2:_ = filter (\i -> not (S.member i seatSet) && S.member (i - 1) seatSet && S.member (i + 1) seatSet) [1..1022]
     print (part1, part2)

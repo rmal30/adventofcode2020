@@ -1,19 +1,8 @@
-import Data.Map(empty, insert, insertWith, Map, toList, elems, size)
+import Data.IntMap(empty, insert, insertWith, IntMap, toList, elems, size)
 import Data.List(foldl')
-
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 type Mask = (String, [(Int, Int)])
-
 
 addLine (masks, i) line
     | takeWhile (/='=') line == "mask " = (masks ++ [(mask, [])], i + 1)
@@ -27,14 +16,11 @@ addLine (masks, i) line
 parseLines :: [String] -> [Mask]
 parseLines xs = fst (foldl' addLine ([], -1) xs)
 
-
-applyMask '0' _ = '0'
-applyMask '1' _ = '1'
 applyMask 'X' x = x
+applyMask x _ = x
 
 applyMask2 '0' x = x
-applyMask2 '1' _ = '1'
-applyMask2 'X' _ = 'X'
+applyMask2 x _ = x
 
 binary 0 = []
 binary 1 = ['1']
@@ -50,9 +36,8 @@ getValue (x:xs) = (read [x]) + 2*(getValue xs)
 bin2dec = getValue . reverse
 
 expandAddresses [] = [[]]
-expandAddresses ('0':x) = map ('0':) (expandAddresses x)
-expandAddresses ('1':x) = map ('1':) (expandAddresses x)
 expandAddresses ('X':x) = map ('0':) (expandAddresses x) ++ map ('1':) (expandAddresses x)
+expandAddresses (x:xs) = map (x:) (expandAddresses xs)
 
 executeInstruction mask memory (address, value) = insertWith const address (bin2dec (zipWith applyMask mask (getBinary value))) memory
 
@@ -61,11 +46,10 @@ executeInstruction2 mask memory (address, value) = foldl' (\m i -> insertWith co
 getAddresses :: String -> Int -> [Int]
 getAddresses mask address = map bin2dec (expandAddresses (zipWith applyMask2 mask (getBinary address)))
 
-executeMask :: Map Int Int -> (String, [(Int, Int)]) -> Map Int Int
+executeMask :: IntMap Int -> (String, [(Int, Int)]) -> IntMap Int
 executeMask memory (mask, instructions) = foldl' (executeInstruction mask) memory instructions
 
-
-executeMask2 :: Map Int Int -> (String, [(Int, Int)]) -> Map Int Int
+executeMask2 :: IntMap Int -> (String, [(Int, Int)]) -> IntMap Int
 executeMask2 memory (mask, instructions) = foldl' (executeInstruction2 mask) memory instructions
 
 main = do

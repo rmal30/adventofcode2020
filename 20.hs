@@ -1,17 +1,7 @@
 import Data.Array.IArray
 import qualified Data.Map as M
 import Data.List(foldl')
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
-
+import Utils(split)
 
 data Color = Black | White deriving (Show, Eq)
 

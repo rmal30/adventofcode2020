@@ -2,22 +2,7 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.List (foldl')
 import Data.Array.IArray(Array, array, (!), (//))
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
-
-union x = foldl' S.union S.empty x
-
-
-join _ [] = []
-join tok (x:arr) = x ++ (if null arr then [] else ([tok] ++ join tok arr))
+import Utils(split, join)
 
 applyInstruction (acc, pointer) (op, delta) =
     case op of
@@ -41,7 +26,6 @@ runInstructionOnce instructions (pointersVisited, acc, pointer, exited, duplicat
         newExited = newPointer >= length instructions
         newDuplicate = S.member newPointer pointersVisited
 
-
 type Instruction = (String, Int)
 type ProgramState = (S.Set Int, Int, Int, Bool, Bool)
 
@@ -52,7 +36,6 @@ swapInstr (op, delta) = case op of
     "acc" -> ("acc", delta)
     "jmp" -> ("nop", delta)
     "nop" -> ("jmp", delta)
-
 
 main = do
     contents <- readFile "inputs/8.txt"

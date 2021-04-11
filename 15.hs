@@ -5,8 +5,7 @@ import qualified Data.IntMap.Strict as M
 import Data.Array.MArray (newArray, readArray, writeArray)
 import Data.Array.ST
 import Control.Monad.ST
-
-startingValues = [6,4,12,1,20,0,16]
+import Utils(split)
 
 getNth input n = foldl' (\(l, heard) i -> (i - M.findWithDefault i l heard, M.insert l i heard)) initial [(length input - 1)..(n - 2)]
     where
@@ -26,6 +25,8 @@ getNthFast input n = runST thread
             return a
 
 main = do
+    contents <- readFile "inputs/15.txt"
+    let startingValues = map read (split ',' (head (lines contents)))
     let part1 = getNthFast startingValues 2020
     let part2 = getNthFast startingValues 30000000
     print (part1, part2)

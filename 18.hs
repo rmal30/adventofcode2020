@@ -1,16 +1,7 @@
 import Data.List(scanl', foldl')
 import Data.Map((!), fromList)
 
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 splitOn cond [] = []
 splitOn cond x = if null b then [a] else a:(splitOn cond (tail b))

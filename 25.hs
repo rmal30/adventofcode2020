@@ -8,6 +8,19 @@ modPower a b c =
     where
         u = (modPower a (div b 2) c) ^ 2
 
-key = 20201227
+discreteLog :: Integer -> Integer -> Integer -> Maybe Integer
+discreteLog b a m = if null sols then Nothing else Just count
+    where
+        sols = dropWhile (\(i, v) -> v /= a) (zip [0..(m - 1)] (iterate (\v -> rem (v * b) m) 1))
+        (count, _):_ = sols
 
-main = print (modPower 7 ((8516637 + 1)*(11710224 + 1)) key)
+solve :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
+solve subjectNumber cardPublicKey doorPublicKey modulus = do
+    cardLoopSize <- discreteLog subjectNumber cardPublicKey modulus
+    doorLoopSize <- discreteLog subjectNumber doorPublicKey modulus
+    Just (modPower subjectNumber (cardLoopSize * doorLoopSize) modulus)
+
+main = do
+    contents <- readFile "inputs/25.txt"
+    let cardPublicKey:doorPublicKey:_ = map read (lines contents)
+    print (solve 7 cardPublicKey doorPublicKey 20201227)

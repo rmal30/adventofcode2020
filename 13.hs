@@ -1,21 +1,11 @@
 import Data.List(sort)
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
+import Utils(split)
 
 readValue :: String -> Maybe Int
 readValue "x" = Nothing
 readValue x = Just (read x)
 
 catMaybes ls = [x | Just x <- ls]
-
 
 extendedEuclidean a b = head (dropWhile (\(_, _, _, _, _, x, _, _) -> x /= 0) (iterate stateFunc init))
     where

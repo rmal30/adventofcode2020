@@ -1,22 +1,7 @@
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.List (foldl')
-split :: Eq a => a -> [a] -> [[a]]
-split _ [] = []
-split tok arr =
-    if not (null y) then
-        x:(split tok newArr)
-    else
-        [x]
-    where
-        (x, y) = break (==tok) arr
-        newArr = tail y
-
-union x = foldl' S.union S.empty x
-
-
-join _ [] = []
-join tok (x:arr) = x ++ (if null arr then [] else ([tok] ++ join tok arr))
+import Utils(split, join, takeWhileChange)
 
 trim :: String -> String
 trim = f . f
@@ -34,31 +19,19 @@ parseRule str = (goal, dependencies)
         parseDependencies "no other bags" = []
         parseDependencies x = map parseDependency (split ',' (trim x))
 
-
 addEntry goal m (d, _) =
-            case M.lookup d m of
-                Just goals -> M.insert d (S.insert goal goals) m
-                Nothing -> M.insert d (S.fromList [goal]) m
-
+    case M.lookup d m of
+        Just goals -> M.insert d (S.insert goal goals) m
+        Nothing -> M.insert d (S.fromList [goal]) m
 
 addReverseDependencies m (goal, dependencies) = foldl' (addEntry goal) m dependencies
 
-getNeighbours tree items = S.toList (union ((S.fromList items):[
-    case M.lookup item tree of
-        Just s -> s
-        Nothing -> S.empty
-    | item <- items]))
-
-takeWhileChange [] = []
-takeWhileChange [x] = [x]
-takeWhileChange [x,y] = if x == y then [x] else [x,y]
-takeWhileChange (x:y:xs) = if x == y then [x] else x:takeWhileChange (y:xs)
+getNeighbours tree items = S.toList (foldl' S.union S.empty ((S.fromList items):[M.findWithDefault S.empty item tree | item <- items]))
 
 countDependencies goal tree =
     case M.lookup goal tree of
         Just m -> sum [v*(1 + countDependencies k tree) | (k,v) <- M.toList m]
         Nothing -> 0
-
 
 main = do
     contents <- readFile "inputs/7.txt"
