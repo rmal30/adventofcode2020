@@ -1,24 +1,23 @@
-import Data.List(foldl', scanl')
+import Data.List(foldl')
+import Data.Map.Strict(fromList, (!), Map)
 
 data Action = N | S | E | W | L | R | F deriving (Read, Show)
 type Position = (Int, Int)
 type Bearing = Int
 
-moveForward :: Position -> Bearing -> Int -> Position
-moveForward (x, y) angle value =
-    case angle of
-        0 -> (x, y + value)
-        90 -> (x + value, y)
-        180 -> (x, y - value)
-        270 -> (x - value, y)
+bearingVectorMap :: Map Bearing Position
+bearingVectorMap = fromList [(0, (0, 1)), (90, (1, 0)), (180, (0, -1)), (270, (-1, 0)), (360, (0, 1))]
 
-turnPosition (x, y) angle =
-    case angle of
-        0 -> (x, y)
-        90 -> (y, -x)
-        180 -> (-x, -y)
-        270 -> (-y, x)
-        360 -> (x, y)
+bearingMult :: Position -> Position -> Position
+bearingMult (x1, y1) (x2, y2) = (x2 * y1 + x1 * y2, y1 * y2 - x1 * x2)
+
+moveForward :: Position -> Bearing -> Int -> Position
+moveForward (x, y) angle value = (x + dx * value, y + dy * value)
+    where
+        (dx, dy) = bearingVectorMap ! angle
+
+turnPosition :: Position -> Bearing -> Position
+turnPosition (x, y) angle = (x, y) `bearingMult` (bearingVectorMap ! angle)
 
 applyAction :: (Position, Bearing) -> (Action, Int) -> (Position, Bearing)
 applyAction ((x, y), angle) (action, value) =
@@ -40,17 +39,19 @@ applyAction2 ((x, y), (wx, wy)) (action, value) =
         S -> ((x, y), (wx, wy - value))
         L -> ((x, y), turnPosition (wx, wy) (360 - value))
         R -> ((x, y), turnPosition (wx, wy) value)
-        F -> ((x + wx*value, y + wy*value), (wx, wy))
+        F -> ((x + wx * value, y + wy * value), (wx, wy))
 
+parseCommand :: String -> Maybe (Action, Int)
+parseCommand (a:v) = Just (read [a], read v)
+parseCommand [] = Nothing
 
-parseCommand :: String -> (Action, Int)
-parseCommand (a:v) = (read [a], read v)
-
+manhattan :: Num a => (a, a) -> a
 manhattan (x, y) = abs x + abs y
 
+main :: IO ()
 main = do
     contents <- readFile "inputs/12.txt"
-    let commands = map parseCommand (lines contents)
+    let commands = mapMaybe parseCommand (lines contents)
     let (pos1, _) = foldl' applyAction ((0, 0), 90) commands
     let (pos2, _) = foldl' applyAction2 ((0, 0), (10, 1)) commands
     print (manhattan pos1, manhattan pos2)

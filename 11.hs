@@ -1,51 +1,59 @@
 import Data.Array.IArray(array, bounds, (!), indices, elems, Array)
 import Utils(takeWhileChange)
+import Data.Maybe(fromMaybe)
+
+deltas :: [(Int, Int)]
 deltas = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
-nextStep :: Array (Int, Int) Char -> (Int, Int) -> Char
-nextStep grid (i, j) =
-    case grid ! (i, j) of
-        '.' -> '.'
-        'L' -> if neighbourCount == 0 then '#' else 'L'
-        '#' -> if neighbourCount >= 4 then 'L' else '#'
+data Cell = Floor | Empty | Occupied deriving Eq
 
-    where neighbourCount = length (filter (=='#') [let
-            u = safeLookup grid (d1 + i, d2 + j) in
-                case u of
-                    Just s -> s
-                    Nothing -> 'L'
-                 | (d1, d2) <- deltas])
+parseCell :: Char -> Cell
+parseCell '.' = Floor
+parseCell 'L' = Empty
+parseCell '#' = Occupied
+parseCell _   = Floor
 
-nextStep2 :: Array (Int, Int) Char -> (Int, Int) -> Char
-nextStep2 grid (i, j) =
-    case grid ! (i, j) of
-        '.' -> '.'
-        'L' -> if neighbourCount == 0 then '#' else 'L'
-        '#' -> if neighbourCount >= 5 then 'L' else '#'
+getNextCell :: Int -> Int -> Cell -> Cell
+getNextCell neighbourLimit neighbourCount currentValue = 
+    case currentValue of
+        Floor -> Floor
+        Empty -> if neighbourCount == 0 then Occupied else Empty
+        Occupied -> if neighbourCount >= neighbourLimit then Empty else Occupied
 
-    where neighbourCount = length (filter (=='#') [let
-            u = head (dropWhile (== Just '.') (map (\n -> safeLookup grid (d1*n + i, d2*n + j)) [1..])) in
-                case u of
-                    Just s -> s
-                    Nothing -> 'L'
-                 | (d1, d2) <- deltas])
+nextStep :: Array (Int, Int) Cell -> (Int, Int) -> Cell
+nextStep grid (i, j) = getNextCell 4 neighbourCount (grid ! (i, j))
+    where 
+        neighbourCount = length (filter (== Occupied) [fromMaybe Empty safeLookup grid (dx + i, dy + j) | (dx, dy) <- deltas])
 
-safeLookup grid (a,b) = if a >= alow && a <= ahigh && b >= blow && b <= bhigh then Just (grid ! (a, b)) else Nothing
-    where ((alow, blow), (ahigh, bhigh)) = bounds grid
+nextStep2 :: Array (Int, Int) Cell -> (Int, Int) -> Cell
+nextStep2 grid (i, j) = getNextCell 5 neighbourCount (grid ! (i, j))
+    where 
+        neighbourCount = length (filter (== Occupied) [
+            let
+                u:_ = dropWhile (== Just Floor) [safeLookup grid (dx*n + i, dy*n + j) | n <- [1..]]
+            in
+                fromMaybe Empty u | (dx, dy) <- deltas])
 
-nextIteration :: Array (Int, Int) Char -> Array (Int, Int) Char
-nextIteration grid = array (bounds grid) [((i, j), nextStep grid (i, j)) | (i, j) <- indices grid]
+safeLookup :: Array (Int, Int) Cell -> (Int, Int) -> Maybe Cell
+safeLookup grid (a,b) = 
+        if a >= alow && a <= ahigh && b >= blow && b <= bhigh then 
+            Just (grid ! (a, b)) 
+        else 
+            Nothing
+    where 
+        ((alow, blow), (ahigh, bhigh)) = bounds grid
 
-nextIteration2 :: Array (Int, Int) Char -> Array (Int, Int) Char
-nextIteration2 grid = array (bounds grid) [((i, j), nextStep2 grid (i, j)) | (i, j) <- indices grid]
+nextIteration :: (Array (Int, Int) Cell -> (Int, Int) -> Cell) -> Array (Int, Int) Cell -> Array (Int, Int) Cell
+nextIteration nextStepFunc grid = array (bounds grid) [((i, j), nextStepFunc grid (i, j)) | (i, j) <- indices grid]
 
-countFilled :: Array (Int, Int) Char -> Int
-countFilled grid = length (filter (=='#') (elems grid))
+countFilled :: Array (Int, Int) Cell -> Int
+countFilled grid = length (filter (==Occupied) (elems grid))
 
+main :: IO ()
 main = do
     contents <- readFile "inputs/11.txt"
     let gridStr = lines contents
-    let grid = array ((0, 0), (length (gridStr !! 0) - 1, length gridStr - 1)) [((x, y), c) | (y, l) <- zip [0..] gridStr, (x, c) <- zip [0..] l]
-    let part1 = last (takeWhileChange (map countFilled (iterate nextIteration grid)))
-    let part2 = last (takeWhileChange (map countFilled (iterate nextIteration2 grid)))
+    let grid = array ((0, 0), (length (head gridStr) - 1, length gridStr - 1)) [((x, y), parseCell c) | (y, l) <- zip [0..] gridStr, (x, c) <- zip [0..] l]
+    let part1 = last (takeWhileChange (map countFilled (iterate (nextIteration nextStep) grid)))
+    let part2 = last (takeWhileChange (map countFilled (iterate (nextIteration nextStep2) grid)))
     print (part1, part2)

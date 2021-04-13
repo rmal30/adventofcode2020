@@ -1,9 +1,9 @@
-import Data.IntMap(empty, insert, insertWith, IntMap, toList, elems, size)
+import Data.IntMap(empty, insert, IntMap, elems)
 import Data.List(foldl')
-import Utils(split)
 
-type Mask = (String, [(Int, Int)])
+type MaskInstructions = (String, [(Int, Int)])
 
+addLine ::  ([MaskInstructions], Int) -> String -> ([MaskInstructions], Int)
 addLine (masks, i) line
     | takeWhile (/='=') line == "mask " = (masks ++ [(mask, [])], i + 1)
     | otherwise = (take i masks ++ [(currentMask, instrs ++ [(address, value)])], i)
@@ -13,15 +13,18 @@ addLine (masks, i) line
         mask = tail (tail (dropWhile (/='=') line))
         (currentMask, instrs) = masks !! i
 
-parseLines :: [String] -> [Mask]
+parseLines :: [String] -> [MaskInstructions]
 parseLines xs = fst (foldl' addLine ([], -1) xs)
 
-applyMask 'X' x = x
-applyMask x _ = x
+applyValueMask :: Char -> Char -> Char
+applyValueMask 'X' x = x
+applyValueMask x _ = x
 
-applyMask2 '0' x = x
-applyMask2 x _ = x
+applyAddressMask :: Char -> Char -> Char
+applyAddressMask '0' x = x
+applyAddressMask x _ = x
 
+binary :: Int -> String
 binary 0 = []
 binary 1 = ['1']
 binary x = binary (div x 2) ++ show (mod x 2)
@@ -31,30 +34,33 @@ getBinary x = reverse (take 36 (reverse (binary x) ++ repeat '0'))
 
 getValue :: String -> Int
 getValue [] = 0
-getValue (x:xs) = (read [x]) + 2*(getValue xs)
+getValue (x:xs) = read [x] + 2 * getValue xs
 
+bin2dec :: String -> Int
 bin2dec = getValue . reverse
 
-expandAddresses [] = [[]]
-expandAddresses ('X':x) = map ('0':) (expandAddresses x) ++ map ('1':) (expandAddresses x)
-expandAddresses (x:xs) = map (x:) (expandAddresses xs)
+getAddressesFromMask :: String -> [String]
+getAddressesFromMask [] = [[]]
+getAddressesFromMask ('X':x) = map ('0':) (getAddressesFromMask x) ++ map ('1':) (getAddressesFromMask x)
+getAddressesFromMask (x:xs) = map (x:) (getAddressesFromMask xs)
 
-executeInstruction mask memory (address, value) = insertWith const address (bin2dec (zipWith applyMask mask (getBinary value))) memory
+writeMaskedValueToAddress :: String -> IntMap Int -> (Int, Int) -> IntMap Int
+writeMaskedValueToAddress mask memory (address, value) = insert address maskedValue memory
+    where
+        maskedValue = bin2dec (zipWith applyValueMask mask (getBinary value))
 
-executeInstruction2 mask memory (address, value) = foldl' (\m i -> insertWith const i value m) memory (getAddresses mask address)
+writeValueToMaskedAddress :: String -> IntMap Int -> (Int, Int) -> IntMap Int
+writeValueToMaskedAddress mask memory (address, value) = foldl' (\m i -> insert i value m) memory addresses
+    where
+        addresses = map bin2dec (getAddressesFromMask (zipWith applyAddressMask mask (getBinary address)))
 
-getAddresses :: String -> Int -> [Int]
-getAddresses mask address = map bin2dec (expandAddresses (zipWith applyMask2 mask (getBinary address)))
+executeMaskInstructions :: (String -> IntMap Int -> (Int, Int) -> IntMap Int) -> IntMap Int -> MaskInstructions -> IntMap Int
+executeMaskInstructions writeFunc memory (mask, instructions) = foldl' (writeFunc mask) memory instructions
 
-executeMask :: IntMap Int -> (String, [(Int, Int)]) -> IntMap Int
-executeMask memory (mask, instructions) = foldl' (executeInstruction mask) memory instructions
-
-executeMask2 :: IntMap Int -> (String, [(Int, Int)]) -> IntMap Int
-executeMask2 memory (mask, instructions) = foldl' (executeInstruction2 mask) memory instructions
-
+main :: IO ()
 main = do
     contents <- readFile "inputs/14.txt"
-    let maskMap = ( (parseLines (lines contents)))
-    let part1 = sum (elems (foldl' executeMask empty maskMap))
-    let part2 = sum (elems (foldl' executeMask2 empty maskMap))
+    let maskMap = parseLines (lines contents)
+    let part1 = sum (elems (foldl' (executeMaskInstructions writeMaskedValueToAddress) empty maskMap))
+    let part2 = sum (elems (foldl' (executeMaskInstructions writeValueToMaskedAddress) empty maskMap))
     print (part1, part2)

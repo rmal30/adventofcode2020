@@ -1,24 +1,20 @@
-import qualified Data.IntSet as S
+import qualified Data.Set as S
 
-getPairsWithSum :: [Int] -> Int -> [(Int, Int)]
-getPairsWithSum values target = [(v1, v2) | v1 <- values, v2 <- values, v1 + v2 == target, v1 /= v2]
+getPairsWithSum :: Integral a => S.Set a -> a -> [(a, a)]
+getPairsWithSum set target = [(element1, element2) | element1 <- S.elems set, let element2 = target - element1, S.member element2 set]
 
-getPairsWithSumFast :: [Int] -> Int -> [(Int, Int)]
-getPairsWithSumFast values target = filter (\(_, v2) -> S.member v2 valueSet) [(v, target - v) | v <- values]
-    where
-        valueSet = S.fromList values
+getTriplesWithSum :: Integral a => S.Set a -> a -> [(a, a, a)]
+getTriplesWithSum set target = [(element1, element2, element3) | 
+        element1 <- S.elems set, element2 <- S.elems set, 
+        let element3 = target - element1 - element2, 
+        S.member element3 set
+    ]
 
-getTriplesWithSum :: [Int] -> Int -> [(Int, Int, Int)]
-getTriplesWithSum values target = [(v1, v2, v3) | v1 <- values, v2 <- values, v3 <- values, sum [v1, v2, v3] == target, v1 /= v2, v2 /= v3, v3 /= v1]
-
-getTriplesWithSumFast :: [Int] -> Int -> [(Int, Int, Int)]
-getTriplesWithSumFast values target = filter (\(_, _, v3) -> S.member v3 valueSet) [(v1, v2, target - v1 - v2) | v1 <- values, v2 <- values]
-    where
-        valueSet = S.fromList values
-
+main :: IO ()
 main = do
     contents <- readFile "inputs/1.txt"
-    let values = map read (lines contents)
-    let (p1, p2):_ = values `getPairsWithSumFast` 2020
-    let (t1, t2, t3):_ = values `getTriplesWithSumFast` 2020
+    let set = S.fromList (map read (lines contents))
+    let target = 2020 :: Int
+    let (p1, p2):_ = set `getPairsWithSum` target
+    let (t1, t2, t3):_ = set `getTriplesWithSum` target
     print (p1 * p2, t1 * t2 * t3)

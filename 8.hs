@@ -1,49 +1,64 @@
 import qualified Data.Set as S
-import qualified Data.Map as M
-import Data.List (foldl')
 import Data.Array.IArray(Array, array, (!), (//))
-import Utils(split, join)
+import Utils(split)
 
-applyInstruction (acc, pointer) (op, delta) =
-    case op of
-        "acc" -> (acc + delta, pointer + 1)
-        "jmp" -> (acc, pointer + delta)
-        "nop" -> (acc, pointer + 1)
+data Operation = Accumulate | Jump | NoOperation
+type Instruction = (Operation, Int)
+type ProgramState = (Int, Int)
+type ExecutionState = (S.Set Int, ProgramState, Bool, Bool)
 
-parseDelta d = if head d == '+' then read (tail d) else read d
+applyInstruction :: ProgramState -> Instruction -> ProgramState
+applyInstruction (accumulator, pointer) (Accumulate, delta) = (accumulator + delta, pointer + 1)
+applyInstruction (accumulator, pointer) (Jump, delta) = (accumulator, pointer + delta)
+applyInstruction (accumulator, pointer) (NoOperation, _) = (accumulator, pointer + 1)
 
-parseInstruction :: String -> (String, Int)
-parseInstruction str = (op, delta)
+parseDelta :: String -> Int
+parseDelta ('+':d) = read d
+parseDelta ('-':d) = -(read d)
+parseDelta _ = 0
+
+instance Read Operation where
+    readsPrec _ "acc" = [(Accumulate, "")]
+    readsPrec _ "jmp" = [(Jump, "")]
+    readsPrec _ "nop" = [(NoOperation, "")]
+    readsPrec _  _    = []
+
+parseInstruction :: String -> Instruction
+parseInstruction str = (read operationStr, parseDelta deltaStr)
     where
-        [op, deltaStr] = split ' ' str
-        delta = parseDelta deltaStr
+        [operationStr, deltaStr] = split ' ' str
 
-runInstructionOnce :: Array Int Instruction -> ProgramState -> ProgramState
-runInstructionOnce instructions (pointersVisited, acc, pointer, exited, duplicate) = (newPointers, newAcc, newPointer, newExited, newDuplicate)
+runInstructionOnce :: Array Int Instruction -> ExecutionState -> ExecutionState
+runInstructionOnce instructions (pointersVisited, (accumulator, pointer), exited, _) = (newPointers, (newAccumulator, newPointer), newExited, newDuplicate)
     where
         newPointers = S.insert pointer pointersVisited
-        (newAcc, newPointer) = if exited then (acc, pointer) else applyInstruction (acc, pointer) (instructions ! pointer)
+        (newAccumulator, newPointer) = 
+            if exited then 
+                (accumulator, pointer) 
+            else 
+                applyInstruction (accumulator, pointer) (instructions ! pointer)
         newExited = newPointer >= length instructions
         newDuplicate = S.member newPointer pointersVisited
 
-type Instruction = (String, Int)
-type ProgramState = (S.Set Int, Int, Int, Bool, Bool)
+runProgramOnce :: Array Int Instruction -> ExecutionState
+runProgramOnce instructions = lastProgramState
+    where
+        programStates = iterate (runInstructionOnce instructions) (S.empty, (0, 0), False, False)
+        lastProgramState:_ = dropWhile (\(_, _, exited, duplicate) -> not exited && not duplicate) programStates
 
-runProgramOnce :: Array Int Instruction -> ProgramState
-runProgramOnce instructions = head (dropWhile (\(_, _, _, exited, duplicate) -> (not exited) && (not duplicate)) (iterate (runInstructionOnce instructions) (S.empty, 0, 0, False, False)))
+swapOp :: Operation -> Operation
+swapOp Accumulate = Accumulate
+swapOp Jump = NoOperation
+swapOp NoOperation = Jump
 
-swapInstr (op, delta) = case op of
-    "acc" -> ("acc", delta)
-    "jmp" -> ("nop", delta)
-    "nop" -> ("jmp", delta)
-
+main :: IO ()
 main = do
     contents <- readFile "inputs/8.txt"
     let instructionsList = map parseInstruction (lines contents)
-    let instructions = array (0, ((length instructionsList) - 1)) (zip [0..] instructionsList)
-    let (__, part1, _, _, _) = runProgramOnce instructions
+    let instructions = array (0, length instructionsList - 1) (zip [0..] instructionsList)
+    let (_, (part1, _), _, _) = runProgramOnce instructions
 
-    let instructionSets = [ instructions // [(p, (swapInstr instr))] | (p, instr) <- zip [0..] instructionsList]
-    let (_, part2, _, _, _) = head (filter (\(_, _, _, exited, _) -> exited) [runProgramOnce s | s <- instructionSets])
+    let instructionSets = [ instructions // [(pointer, (swapOp operation, value))] | (pointer, (operation, value)) <- zip [0..] instructionsList]
+    let (_, (part2, _), _, _) = head (filter (\(_, _, exited, _) -> exited) [runProgramOnce modifiedInstructions | modifiedInstructions <- instructionSets])
 
     print (part1, part2)

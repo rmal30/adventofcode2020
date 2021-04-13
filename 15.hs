@@ -2,12 +2,12 @@
 import Data.Foldable(foldlM)
 import Data.List(foldl')
 import qualified Data.IntMap.Strict as M
-import Data.Array.MArray (newArray, readArray, writeArray)
 import Data.Array.ST
 import Control.Monad.ST
 import Utils(split)
 
-getNth input n = foldl' (\(l, heard) i -> (i - M.findWithDefault i l heard, M.insert l i heard)) initial [(length input - 1)..(n - 2)]
+_getNth :: [Int] -> Int -> (Int, M.IntMap Int)
+_getNth input n = foldl' (\(lastHeard, heard) i -> (i - M.findWithDefault i lastHeard heard, M.insert lastHeard i heard)) initial [(length input - 1)..(n - 2)]
     where
         initial = (last input, M.fromList (init (zip input [0..])))
 
@@ -16,14 +16,15 @@ getNthFast input n = runST thread
     where
         thread = do
             initial <- newArray (0, n) (-1) :: ST s (STUArray s Int Int)
-            _ <- mapM_ (\(i, j) -> writeArray initial i j) (init (zip input [0..]))
-            (a,b) <- foldlM (\(l, heard) i -> do
-                v <- readArray heard l
-                _ <- writeArray heard l i
+            mapM_ (uncurry (writeArray initial)) (init (zip input [0..]))
+            (lastNumber, _) <- foldlM (\(lastHeard, heard) i -> do
+                v <- readArray heard lastHeard
+                writeArray heard lastHeard i
                 return (if v == -1 then 0 else i - v, heard)
                 ) (last input, initial) [(length input - 1)..(n - 2)]
-            return a
+            return lastNumber
 
+main :: IO ()
 main = do
     contents <- readFile "inputs/15.txt"
     let startingValues = map read (split ',' (head (lines contents)))

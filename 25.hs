@@ -1,26 +1,32 @@
 modPower :: Integer -> Integer -> Integer -> Integer
-modPower a 0 c = 1
-modPower a b c =
-    if mod b 2 == 0 then
-        mod u c
+modPower _ 0 _ = 1
+modPower base index modulus =
+    if exponentRem == 0 then
+        rem half modulus
     else
-        mod (a*u) c
+        rem (half * base) modulus
     where
-        u = (modPower a (div b 2) c) ^ 2
+        (exponentQuot, exponentRem) = quotRem index 2
+        half = (modPower base exponentQuot modulus) ^ (2 :: Integer)
 
 discreteLog :: Integer -> Integer -> Integer -> Maybe Integer
-discreteLog b a m = if null sols then Nothing else Just count
+discreteLog base expected modulus = 
+    if null sols then 
+        Nothing 
+    else 
+        Just index
     where
-        sols = dropWhile (\(i, v) -> v /= a) (zip [0..(m - 1)] (iterate (\v -> rem (v * b) m) 1))
-        (count, _):_ = sols
+        sols = filter (\(_, value) -> value == expected) (zip [0..(modulus - 1)] (iterate (\value -> rem (value * base) modulus) 1))
+        (index, _):_ = sols
 
-solve :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
-solve subjectNumber cardPublicKey doorPublicKey modulus = do
+getEncryptionKey :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
+getEncryptionKey subjectNumber cardPublicKey doorPublicKey modulus = do
     cardLoopSize <- discreteLog subjectNumber cardPublicKey modulus
     doorLoopSize <- discreteLog subjectNumber doorPublicKey modulus
     Just (modPower subjectNumber (cardLoopSize * doorLoopSize) modulus)
 
+main :: IO ()
 main = do
     contents <- readFile "inputs/25.txt"
     let cardPublicKey:doorPublicKey:_ = map read (lines contents)
-    print (solve 7 cardPublicKey doorPublicKey 20201227)
+    print (getEncryptionKey 7 cardPublicKey doorPublicKey 20201227)

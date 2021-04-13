@@ -13,8 +13,13 @@ module Utils(split, join, takeWhileChange) where
 
     join :: a -> [[a]] -> [a]
     _ `join` [] = []
-    separator `join` (x:xs)  = x ++ (if null xs then [] else (separator:(separator `join` xs)))
+    separator `join` (x:xs)  = x ++ (if null xs then [] else separator : (separator `join` xs))
 
+    takeWhileChange :: Eq a => [a] -> [a]
     takeWhileChange [] = []
     takeWhileChange [x] = [x]
-    takeWhileChange (x:y:xs) = if x == y then [x] else x:takeWhileChange (y:xs)
+    takeWhileChange (x:y:xs) = x :
+        if x == y then 
+            [] 
+        else 
+            takeWhileChange (y:xs)
