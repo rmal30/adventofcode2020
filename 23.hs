@@ -7,12 +7,12 @@ import Data.Foldable(foldlM)
 import Data.Char(digitToInt)
 
 _recurse :: Int -> (a -> a) -> a -> a
-_recurse n f initial = foldl' (\x _ -> f x) initial [1..n]
+_recurse n func initial = foldl' (\x _ -> func x) initial [1..n]
 
-arrToCircle :: [Int] -> M.IntMap Int
-arrToCircle arr = M.fromList (zip arr (as ++ [a]))
+listToCircle :: [Int] -> M.IntMap Int
+listToCircle list = M.fromList (zip list (remaining ++ [top]))
     where
-        (a:as) = arr
+        (top:remaining) = list
 
 _applyMove :: Int -> M.IntMap Int -> Int -> M.IntMap Int
 _applyMove !maxVal !circle !current = M.union changes circle
@@ -50,21 +50,21 @@ shuffleCupsFast cups currentCup iterations = thread
         thread = do
             initial <- newArray (0, cupCount) (-1) :: IO (IOUArray Int Int)
             mapM_ (uncurry (writeArray initial)) (M.toList cups)
-            (a,b) <- foldlM (\(circle, currentCup') _ -> do
+            (mutableNewCups, newCurrentCup) <- foldlM (\(circle, currentCup') _ -> do
                 _ <- applyMoveFast cupCount circle currentCup'
                 newCurrent <- readArray circle currentCup'
                 return (circle, newCurrent)
                 ) (initial, currentCup) [1..iterations]
-            na <- freeze a
-            return (na, b)
+            newCups <- freeze mutableNewCups
+            return (newCups, newCurrentCup)
 
 main :: IO ()
 main = do
     contents <- readFile "inputs/23.txt"
     let (inputStr:_) = lines contents
     let input = map digitToInt inputStr
-    let circle = arrToCircle input
-    let circle2 = arrToCircle (input ++ [10..1000000])
+    let circle = listToCircle input
+    let circle2 = listToCircle (input ++ [10..1000000])
     let current = 1
     (newCircle, _) <- shuffleCupsFast circle current 100
     (newCircle2, _) <- shuffleCupsFast circle2 current 10000000

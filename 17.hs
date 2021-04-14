@@ -66,7 +66,7 @@ parseVolume4 contents = array ((0, 0, 0, 0), (si - 1, sj - 1, sk - 1, sl - 1)) [
         (si, sj, sk, sl) = (length volList, length (head volList), length (head (head volList)), length (head (head (head volList))))
 
 countActive :: Ix a => Array a Char -> Int
-countActive x = length (filter (=='#') (elems x))
+countActive cells = length (filter (=='#') (elems cells))
 
 main :: IO ()
 main = do

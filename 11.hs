@@ -30,12 +30,12 @@ nextStep2 grid (i, j) = getNextCell 5 neighbourCount (grid ! (i, j))
     where 
         neighbourCount = length (filter (== Occupied) [
             let
-                u:_ = dropWhile (== Just Floor) [safeLookup grid (dx*n + i, dy*n + j) | n <- [1..]]
+                firstVisibleSeat:_ = dropWhile (== Just Floor) [safeLookup grid (dx*n + i, dy*n + j) | n <- [1..]]
             in
-                fromMaybe Empty u | (dx, dy) <- deltas])
+                fromMaybe Empty firstVisibleSeat | (dx, dy) <- deltas])
 
 safeLookup :: Array (Int, Int) Cell -> (Int, Int) -> Maybe Cell
-safeLookup grid (a,b) = 
+safeLookup grid (a, b) = 
         if a >= alow && a <= ahigh && b >= blow && b <= bhigh then 
             Just (grid ! (a, b)) 
         else 

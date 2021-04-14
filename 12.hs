@@ -42,7 +42,7 @@ applyAction2 ((x, y), (wx, wy)) (action, value) =
         F -> ((x + wx * value, y + wy * value), (wx, wy))
 
 parseCommand :: String -> Maybe (Action, Int)
-parseCommand (a:v) = Just (read [a], read v)
+parseCommand (actionChar:valueStr) = Just (read [actionChar], read valueStr)
 parseCommand [] = Nothing
 
 manhattan :: Num a => (a, a) -> a

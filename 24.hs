@@ -13,12 +13,12 @@ add (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
 parseDirections :: String -> [Direction]
 parseDirections [] = []
-parseDirections ('e' : line) = E : parseDirections line
-parseDirections ('w' : line) = W : parseDirections line
-parseDirections ('n' : 'e' : line) = NE : parseDirections line
-parseDirections ('n' : 'w' : line) = NW : parseDirections line
-parseDirections ('s' : 'e' : line) = SE : parseDirections line
-parseDirections ('s' : 'w' : line) = SW : parseDirections line
+parseDirections ('e' : remainingDirectionsStr) = E : parseDirections remainingDirectionsStr
+parseDirections ('w' : remainingDirectionsStr) = W : parseDirections remainingDirectionsStr
+parseDirections ('n' : 'e' : remainingDirectionsStr) = NE : parseDirections remainingDirectionsStr
+parseDirections ('n' : 'w' : remainingDirectionsStr) = NW : parseDirections remainingDirectionsStr
+parseDirections ('s' : 'e' : remainingDirectionsStr) = SE : parseDirections remainingDirectionsStr
+parseDirections ('s' : 'w' : remainingDirectionsStr) = SW : parseDirections remainingDirectionsStr
 parseDirections _ = []
 
 getPosition :: [Direction] -> Vector2D

@@ -19,14 +19,14 @@ splitOnInclusive cond x = if null b then [a] else a:[head b]: splitOnInclusive c
     where
         (a, b) = break cond x
 
-ops :: Map Char Op
-ops = fromList [('+', Plus), ('*', Times)]
+charOpMap :: Map Char Op
+charOpMap = fromList [('+', Plus), ('*', Times)]
 
 getRemaining :: [String] -> Maybe [(Op, String)]
 getRemaining [] = Just []
-getRemaining ((o:_):y:xs) = do
+getRemaining ((opChar:_):value:xs) = do
     remaining <- getRemaining xs
-    Just ((ops ! o, y) : remaining)
+    Just ((charOpMap ! opChar, value) : remaining)
 getRemaining _ = Nothing
 
 parseExpression :: [String] -> Maybe (String, [(Op, String)])
@@ -38,11 +38,11 @@ parseExpression (x:xs) = do
 applyOperations :: (String -> Maybe Int) -> (String, [(Op, String)]) -> Maybe Int
 applyOperations parseFunc (initial, operations) = do
     initialValue <- if any (`elem` "*+") initial then parseFunc initial else readMaybe initial
-    foldlM (\x (op, str) -> do
-        v <- parseFunc str
+    foldlM (\currentValue (op, str) -> do
+        operationValue <- parseFunc str
         case op of
-            Times -> Just (x*v)
-            Plus -> Just (x + v)
+            Times -> Just (currentValue * operationValue)
+            Plus -> Just (currentValue + operationValue)
         ) initialValue operations
 
 getExpressions :: String -> [String]

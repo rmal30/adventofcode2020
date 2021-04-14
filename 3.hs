@@ -3,7 +3,7 @@ import Data.Array.IArray((!), array, Array)
 type Vector2D = (Int, Int)
 
 getWrappedCoordinatesFromLine :: Vector2D -> Vector2D -> [Vector2D]
-getWrappedCoordinatesFromLine (x, y) (a, b) = [(rem (a * i) x, b * i) | i <- takeWhile (\i -> b * i < y) [0..]]
+getWrappedCoordinatesFromLine (x, y) (dx, dy) = [(rem (dx * i) x, dy * i) | i <- takeWhile (\i -> dy * i < y) [0..]]
 
 getCountFromCoordinates :: Array Vector2D Char -> Vector2D -> Vector2D -> Int
 getCountFromCoordinates values (sy, sx) (dx, dy) = length (filter (=='#') [values ! (y, x) | (x, y) <- getWrappedCoordinatesFromLine (sx, sy) (dx, dy)])

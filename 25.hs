@@ -2,12 +2,13 @@ modPower :: Integer -> Integer -> Integer -> Integer
 modPower _ 0 _ = 1
 modPower base index modulus =
     if exponentRem == 0 then
-        rem half modulus
+        rem nearestEvenPower modulus
     else
-        rem (half * base) modulus
+        rem (nearestEvenPower * base) modulus
     where
         (exponentQuot, exponentRem) = quotRem index 2
-        half = (modPower base exponentQuot modulus) ^ (2 :: Integer)
+        halfPower = modPower base exponentQuot modulus
+        nearestEvenPower = halfPower ^ (2 :: Integer)
 
 discreteLog :: Integer -> Integer -> Integer -> Maybe Integer
 discreteLog base expected modulus = 

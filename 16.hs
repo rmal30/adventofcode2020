@@ -19,7 +19,7 @@ getInvalidValues :: Integral a => [[(a, a)]] -> [a] -> [a]
 getInvalidValues ranges = filter (not . anyInRange ranges)
 
 getMatches :: Integral a => [(String, [(a, a)])] -> [[a]] -> [[String]]
-getMatches records tickets = [map fst (filter (\(_, v) -> all (\t -> inRange (t !! i) v) tickets) records) | i <- [0..(cols-1)]]
+getMatches records tickets = [map fst (filter (\(_, v) -> all (\t -> inRange (t !! i) v) tickets) records) | i <- [0..(cols - 1)]]
     where
         cols = length (head tickets)
 
@@ -38,7 +38,7 @@ main = do
     let part1 = sum (map (sum . getInvalidValues ranges) nearbyTickets)
     let validTickets = filter (null . getInvalidValues ranges) nearbyTickets
     let matches = getMatches records validTickets
-    let (reducedMatches, _) = head (dropWhile (\(i, _) -> length i < length matches) (iterate simplify ([], matches)))
+    let (reducedMatches, _):_ = dropWhile (\(i, _) -> length i < length matches) (iterate simplify ([], matches))
     let ticket = getTicketValues ticketStr
     let part2 = product (map ((ticket!!) . snd) (filter (\(i,_) -> head (split ' ' i) == "departure") reducedMatches))
     print (part1, part2)

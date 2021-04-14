@@ -18,7 +18,7 @@ parseRule :: String -> (Int, Rule)
 parseRule ruleStr = (read ruleNo, rule)
     where
         [ruleNo, _:remaining] = split ':' ruleStr
-        isValue = null (filter (==' ') remaining) && any (`elem` ['a'..'z']) remaining
+        isValue = (' ' `notElem` remaining) && any (`elem` ['a'..'z']) remaining
         rule = if isValue then Value (init (tail remaining)) else Options (parseOptions remaining)
 
 applyRule :: String -> [Int] -> Map Int Rule -> [String]

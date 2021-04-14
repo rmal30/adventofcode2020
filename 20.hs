@@ -4,6 +4,9 @@ import Data.List(foldl')
 import Utils(split)
 import Data.Maybe(mapMaybe)
 
+minmax :: Ord a => [a] -> (a, a)
+minmax x = (minimum x, maximum x)
+
 parseTile :: [String] -> Maybe (Int, Array (Int, Int) Char)
 parseTile [] = Nothing
 parseTile (header:tileStr) = Just (tileNo, image)
@@ -14,14 +17,9 @@ parseTile (header:tileStr) = Just (tileNo, image)
         image = array ((0, 0), (tileSize - 1, tileSize - 1)) [((x, y), c) | (y, row) <- zip [0..] tileStr, (x, c) <- zip [0..] row]
 
 getEdges :: Array (Int, Int) Char -> [[Char]]
-getEdges image = [
-        [image ! (0, i) | i <- [0..my]],
-        [image ! (mx, i) | i <- [my,(my - 1)..0]],
-        [image ! (i, 0) | i <- [mx,(mx - 1)..0]],
-        [image ! (i, my) | i <- [0..mx]]
-    ]
+getEdges image = map (map (image!)) [zip (repeat 0) [0..my], zip (repeat mx) [my, (my - 1)..0], zip [mx, (mx - 1)..0] (repeat 0), zip [0..mx] (repeat my)]
     where
-        (_, (mx,my)) = bounds image
+        (_, (mx, my)) = bounds image
 
 flipImage :: Array (Int, Int) Char -> Array (Int, Int) Char
 flipImage image = ixmap b (\(i, j) -> (i, maxSize - j)) image
@@ -30,15 +28,11 @@ flipImage image = ixmap b (\(i, j) -> (i, maxSize - j)) image
         (_, (maxSize, _)) = b
 
 getRotations :: Array (Int, Int) Char -> [Array (Int, Int) Char]
-getRotations image = [
-    ixmap b (\(i, j) -> (i, j)) image,
-    ixmap b (\(i, j) -> (maxSize - i, maxSize - j)) image,
-    ixmap b (\(i, j) -> (maxSize - j, i)) image,
-    ixmap b (\(i, j) -> (j, maxSize - i)) image
-    ]
+getRotations image = [ixmap imageBounds (rotatedIndexes (a, b)) image | (a, b) <- [(1, 0), (0, 1), (-1, 0), (0, -1)]]
     where
-        b = bounds image
-        (_, (maxSize, _)) = b
+        imageBounds = bounds image
+        (_, (maxSize, _)) = imageBounds
+        rotatedIndexes (a, b) (i, j) = (a*i + b*j + div ((1 - a - b)*maxSize) 2, a*j - b*i + div ((b - a + 1)*maxSize) 2)
 
 getRotationsAndFlips :: Array (Int, Int) Char -> [Array (Int, Int) Char]
 getRotationsAndFlips image = getRotations image ++ getRotations (flipImage image)
@@ -51,13 +45,8 @@ placePieces tileMap neighbourMap assembledPieces = foldl' (\m (k, v) -> M.insert
         neighbourId <- neighbourMap M.! pieceId,
         not (M.member neighbourId assembledPieces),
         rotatedImage <- getRotationsAndFlips (tileMap M.! neighbourId),
-        let
-            [leftNeighbourEdge, rightNeighbourEdge, upNeighbourEdge, downNeighbourEdge] = getEdges rotatedImage
-            condLeft = leftImageEdge == reverse rightNeighbourEdge
-            condRight = rightImageEdge == reverse leftNeighbourEdge
-            condUp = upImageEdge == reverse downNeighbourEdge
-            condDown = downImageEdge == reverse upNeighbourEdge,
-        newCoordinates <- map snd (filter fst (zip [condLeft, condRight, condUp, condDown] [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]))
+        let conditions = zipWith (==) [rightImageEdge, leftImageEdge, downImageEdge, upImageEdge] (map reverse (getEdges rotatedImage)),
+        (True, newCoordinates) <- zip conditions [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
     ]
 
 trimBorders :: Array (Int, Int) a -> Array (Int, Int) a
@@ -67,18 +56,14 @@ trimBorders x = array ((0, 0), (a - 2, b - 2)) [((i - 1, j - 1), x ! (i, j)) | i
 
 mergeImage :: [((Int, Int), Array (Int, Int) a)] -> Array (Int, Int) a
 mergeImage images = array ((0, 0), (dX*tileSize - 1, dY*tileSize - 1)) [
-    (((x - minX) * tileSize + i, (y - minY) * tileSize + j), image ! (i, j)) | 
-    ((x, y), image) <- images, 
-    (i, j) <- indices image
+        (((x - minX) * tileSize + i, (y - minY) * tileSize + j), image ! (i, j)) | 
+        ((x, y), image) <- images, 
+        (i, j) <- indices image
     ]
     where
         (xCoords, yCoords) = unzip (map fst images)
-        minX = minimum xCoords
-        maxX = maximum xCoords
-        minY = minimum yCoords
-        maxY = maximum yCoords
-        dX = maxX - minX + 1
-        dY = maxY - minY + 1
+        [(minX, maxX), (minY, maxY)] = map minmax [xCoords, yCoords]
+        [dX, dY] = [maxI - minI + 1 | (minI, maxI) <- [(minX, maxX), (minY, maxY)]]
         (_, (maxTileX, _)) = bounds (snd (head images))
         tileSize = 1 + maxTileX
 
@@ -99,7 +84,7 @@ countPatterns :: [(Int, Int)] -> Array (Int, Int) Char -> Int
 countPatterns template image  = length (filter (checkPatternAtPosition image template) [(i, j) | i <- [lx..(hx - px)], j <- [ly..(hy - py)]])
     where
         ((lx, ly), (hx, hy)) = bounds image
-        (px, py) = (maximum (map fst template), maximum (map snd template))
+        [px, py] = map maximum [map fst template, map snd template]
 
 main :: IO ()
 main = do

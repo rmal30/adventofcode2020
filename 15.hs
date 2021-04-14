@@ -18,9 +18,14 @@ getNthFast input n = runST thread
             initial <- newArray (0, n) (-1) :: ST s (STUArray s Int Int)
             mapM_ (uncurry (writeArray initial)) (init (zip input [0..]))
             (lastNumber, _) <- foldlM (\(lastHeard, heard) i -> do
-                v <- readArray heard lastHeard
+                value <- readArray heard lastHeard
                 writeArray heard lastHeard i
-                return (if v == -1 then 0 else i - v, heard)
+                return (
+                    if value == -1 then 
+                        0 
+                    else 
+                        i - value
+                    , heard)
                 ) (last input, initial) [(length input - 1)..(n - 2)]
             return lastNumber
 

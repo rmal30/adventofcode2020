@@ -5,12 +5,12 @@ type MaskInstructions = (String, [(Int, Int)])
 
 addLine ::  ([MaskInstructions], Int) -> String -> ([MaskInstructions], Int)
 addLine (masks, i) line
-    | takeWhile (/='=') line == "mask " = (masks ++ [(mask, [])], i + 1)
+    | takeWhile (/='=') line == "mask " = (masks ++ [(assignment, [])], i + 1)
     | otherwise = (take i masks ++ [(currentMask, instrs ++ [(address, value)])], i)
     where
         address = read (takeWhile (/= ']') (tail (dropWhile (/= '[') line)))
-        value = read (tail (tail (dropWhile (/= '=') line)))
-        mask = tail (tail (dropWhile (/='=') line))
+        _:_:assignment = dropWhile (/='=') line
+        value = read assignment
         (currentMask, instrs) = masks !! i
 
 parseLines :: [String] -> [MaskInstructions]

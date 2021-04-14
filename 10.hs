@@ -2,10 +2,10 @@ import Data.List(sort, group, foldl')
 import qualified Data.IntMap.Strict as M
 
 addEntry :: Int -> M.IntMap Int -> Int -> M.IntMap Int
-addEntry a m b = M.insertWith (+) a (M.findWithDefault 0 b m) m
+addEntry target counts previousTarget = M.insertWith (+) adapter (M.findWithDefault 0 previousTarget counts) counts
 
 addAdapter :: M.IntMap Int -> Int -> M.IntMap Int
-addAdapter m a = foldl' (addEntry a) m [a - 3, a - 2, a - 1]
+addAdapter counts adapter = foldl' (addEntry adapter) counts [adapter - 3, adapter - 2, adapter - 1]
 
 tally :: Ord a => [a] -> [(a, Int)]
 tally = map (\x -> (head x, length x)) . group . sort 

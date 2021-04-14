@@ -3,9 +3,9 @@ import Utils(split)
 type PasswordEntry a = ((a, a), Char, String)
 
 parsePasswordEntry :: String -> PasswordEntry Int
-parsePasswordEntry str = ((low, high), letter, password)
+parsePasswordEntry line = ((low, high), letter, password)
     where
-        [rangeStr, letter:_, password] = ' ' `split` str
+        [rangeStr, letter:_, password] = ' ' `split` line
         [low, high] = (map read . split '-') rangeStr
 
 xor :: Bool -> Bool -> Bool

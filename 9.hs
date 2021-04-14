@@ -14,7 +14,7 @@ main = do
     let partialSums = series numbers
     let preambleSize = 25
     let (_, part1):_ = dropWhile (\(i, v) -> not (null (getPairsWithSum (S.fromList (take preambleSize (drop (i - preambleSize) numbers))) v))) (drop preambleSize (zip [0..] numbers))
-    let (end, start):_ = [(i, j) | (i, a) <- zip [0..] partialSums, (j, b) <- take i (zip [0..] partialSums), a - b == part1]
+    let (end, start):_ = [(endIndex, startIndex) | (endIndex, endSum) <- zip [0..] partialSums, (startIndex, startSum) <- take endIndex (zip [0..] partialSums), endSum - startSum == part1]
     let conseqItems = drop start (take end numbers)
     let part2 = minimum conseqItems + maximum conseqItems
     print (part1, part2)
