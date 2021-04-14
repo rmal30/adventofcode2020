@@ -1,3 +1,4 @@
-*
-!*.hs
+src/*
+inputs/*
+!src/*.hs
 !.gitignore
